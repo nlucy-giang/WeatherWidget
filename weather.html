@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Widget</title>
+    <style>
+        body {
+            color: white;
+            font-family: Georgia, serif, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #weather-widget {
+            background-color: #30343D;
+            border-radius: 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            width: 350px;
+        }
+
+        #location-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        #location-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
+        #weather-description {
+            text-align: right;
+        }
+
+        .humidity-icon {
+          width: 20px;
+          height: 20px;
+        }
+
+        #temperature-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #temperature {
+            font-size: 44px;
+            margin-bottom: 5px; /* Add some spacing between main temperature and min/max */
+            padding-left: 5px;
+        }
+
+        #temp-box {
+            display: flex;
+        }
+
+        #temp-box p {
+            margin: 0; /* Remove default margin for paragraphs */
+        }
+
+        #max-temp {
+          padding-right: 12px;
+          padding-bottom: 10px;
+          padding-left: 5px;
+        }
+
+        #max-temp,
+        #min-temp {
+            font-size: 16px; /* Adjust font size for min/max temperatures */
+            margin: 0 5px; /* Add spacing between min and max */
+            display: inline-block; /* Display min and max temperatures inline */
+        }
+
+        #weather-icon {
+            display: flex;
+            width: 55px;
+            height: 55px;
+
+        }
+
+        #details-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .detail-box {
+            background-color: #4A505D; /* Updated color */
+            border-radius: 15px; /* Rounded corners */
+            padding: 10px;
+            box-sizing: border-box;
+            width: 30%;
+            height: 0%;
+            display: flex; /* Use flexbox to control layout */
+            align-items: center; /* Center items vertically */
+            margin-bottom: 1px;
+        }
+
+        .detail-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px; /* Add some spacing between icon and text */
+        }
+
+        #humidity,
+        #rain-chance,
+        #wind {
+            flex-grow: 1; /* Allow the text to grow and fill available space */
+            margin: 0; /* Remove default margin for paragraphs */
+            white-space: nowrap; /* Prevent text from wrapping to the next line */
+            overflow: hidden; /* Hide any overflowed content */
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="weather-widget">
+    <!-- First Row -->
+    <div id="location-row">
+        <div>
+            <img id="location-icon" src="location-icon.png" alt="Location Icon">
+            <span id="location">La Jolla</span>
+        </div>
+        <div id="weather-description">Weather Description</div>
+    </div>
+
+    <!-- Second Row -->
+    <div id="temperature-row">
+        <div id="temperature">Temperature</div>
+        <img id="weather-icon" alt="Weather Icon">
+    </div>
+
+    <!-- Third Row -->
+    <div id="temp-box">
+        <div>
+            <p id="max-temp">/</p>
+        </div>
+        <div>
+            <p id="min-temp"></p>
+        </div>
+    </div>
+
+    <!-- Fourth Row -->
+    <div id="details-row">
+        <div class="detail-box">
+            <img class="humidity-icon detail-icon" src="humidity-icon.png" alt="Humidity Icon">
+            <p id="humidity"></p>
+        </div>
+        <div class="detail-box">
+            <img class="detail-icon" src="rain-icon.png" alt="Rain Icon">
+            <p id="rain-chance"></p>
+        </div>
+        <div class="detail-box">
+            <img class="detail-icon" src="wind-icon.png" alt="Wind Icon">
+            <p id="wind"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // National Weather Service API URL
+        const apiUrl = `https://api.weather.gov/gridpoints/SGX/53,20/forecast`;
+
+        // Fetch weather data
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                const currentWeather = data.properties.periods[0];
+                const temperatureUnit = currentWeather.temperatureUnit;
+
+                // Update weather widget
+                document.getElementById('weather-description').textContent = currentWeather.shortForecast;
+                document.getElementById('temperature').innerHTML = `${currentWeather.temperature} &deg;${temperatureUnit}`;
+                document.getElementById('weather-icon').src = currentWeather.icon;
+
+                // Display min and max temperature in the desired format and color
+                const maxTempElement = document.getElementById('max-temp');
+                const minTempElement = document.getElementById('min-temp');
+
+                maxTempElement.innerHTML = `<span style="color: red;">H: ${data.properties.periods[0].temperature} &deg;${temperatureUnit}</span>`;
+                minTempElement.innerHTML = `<span style="color: #6DB3EE;">L: ${data.properties.periods[1].temperature} &deg;${temperatureUnit}</span>`;
+
+                // Check if the 'probabilityOfPrecipitation' is available in the API response
+                if (currentWeather.probabilityOfPrecipitation.value == null) {
+                    document.getElementById('rain-chance').innerHTML = `0%`;
+                } else {
+                    document.getElementById('rain-chance').innerHTML = `${currentWeather.probabilityOfPrecipitation.value}%`;
+                }
+
+                if (currentWeather.relativeHumidity && currentWeather.relativeHumidity.value !== null) {
+                    document.getElementById('humidity').innerHTML = `${currentWeather.relativeHumidity.value}%`;
+                } else {
+                    document.getElementById('humidity').innerHTML = 'N/A';
+                }
+
+                document.getElementById('wind').textContent = `${currentWeather.windSpeed} ${currentWeather.windDirection}`;
+            })
+            .catch(error => {
+                console.error('Error fetching weather data:', error);
+            });
+    });
+</script>
+
+</body>
+</html>
